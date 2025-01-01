@@ -91,6 +91,8 @@ git commit -m "fix: 버그 수정"
 git commit -m "feat: 새로운 기능 추가 #minor"
 메이저 버전 업데이트
 git commit -m "feat: 주요 기능 변경 #major"
+버전이 필요없는 경우
+git commit -m "feat: 간단한 문서 수정 #noversion"
 ```
 
 ## 사용 방법
