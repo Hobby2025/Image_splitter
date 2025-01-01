@@ -25,16 +25,15 @@ jobs:
       - name: Update Version
         id: version
         run: |
-          # package.json에서 현재 버전 가져오기
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "Current version: $CURRENT_VERSION"
           
-          # 커밋 메시지에서 버전 업데이트 확인
           COMMIT_MSG=$(git log -1 --pretty=%B)
           
-          # #noversion 키워드가 있으면 버전 업데이트 건너뛰기
+          # #noversion 키워드가 있으면 스킵 플래그 설정
           if [[ $COMMIT_MSG == *"#noversion"* ]]; then
             echo "Skipping version update"
+            echo "skip=true" >> $GITHUB_OUTPUT
             echo "new_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
             exit 0
           fi
@@ -50,8 +49,10 @@ jobs:
           echo "New version: $NEW_VERSION"
           npm version $NEW_VERSION --no-git-tag-version
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "skip=false" >> $GITHUB_OUTPUT
 
       - name: Commit and Push Changes
+        if: steps.version.outputs.skip != 'true'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -62,6 +63,7 @@ jobs:
           git push --tags
 
       - name: Create Release
+        if: steps.version.outputs.skip != 'true'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: "v${{ steps.version.outputs.new_version }}"
