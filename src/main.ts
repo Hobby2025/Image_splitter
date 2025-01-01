@@ -5,6 +5,7 @@ import AdmZip from 'adm-zip';
 import { ImageProcessingResult, ProcessingOptions } from './types';
 import { FileService } from './services/FileService';
 import { Logger } from './utils/Logger';
+import { enable } from '@electron/remote/main';
 
 // sharp 모듈 설정
 import type { Sharp, Metadata } from 'sharp';
@@ -20,8 +21,8 @@ class ImageSplitterApp {
     private fileService: FileService;
 
     constructor() {
-        Logger.initialize();  // 로깅 시스템 초기화
-        this.fileService = new FileService(); // FileService 인스턴스 생성
+        Logger.initialize();
+        this.fileService = new FileService();
         this.initializeApp();
     }
 
@@ -48,15 +49,20 @@ class ImageSplitterApp {
         this.mainWindow = new BrowserWindow({
             width: 800,
             height: 600,
+            resizable: false,
+            autoHideMenuBar: true,
             webPreferences: {
                 nodeIntegration: true,
                 contextIsolation: false
             },
-            icon: path.join(__dirname, '../build/icons/icon.png'),
+            icon: process.platform === 'win32' 
+                ? path.join(__dirname, '../../build/icons/icon.ico')
+                : path.join(__dirname, '../../build/icons/icon.icns'),
             title: 'Image Splitter'
         });
 
         this.mainWindow.loadFile(path.join(__dirname, '../public/index.html'));
+        enable(this.mainWindow.webContents);
     }
 
     /**

@@ -6,93 +6,92 @@
 
 - ZIP 파일 내의 이미지들을 자동으로 분할
 - 드래그 앤 드롭으로 간편한 파일 선택
-- 분할 높이 커스터마이징
-- 다크모드 지원
-- 처리 진행률 표시
-- 로그 확인 기능
+- 분할 높이 커스터마이징 (기본값: 1500px)
+- 다크모드/라이트모드 지원
+- 실시간 처리 진행률 표시
+- 상세 로그 확인 기능
+- 자동 폰트 다운로드 (RIDI Batang)
+- 윈도우/맥 크로스 플랫폼 지원
 
 ## 설치 방법
 
 ### 개발 환경 설정
 
 1. 저장소 클론:
-```
-bash
+```bash
 git clone https://github.com/Hobby2025/image_splitter.git
 cd image_splitter
 ```
 
 2. 의존성 설치:
-```
-bash
+```bash
 npm install
+# 이 과정에서 자동으로 다음 작업이 수행됩니다:
+# - electron-builder 의존성 설치
+# - TypeScript 빌드
+# - 필요한 폰트 다운로드
 ```
 
 ### 개발 모드 실행
 
-- Windows:
-```
-bash
-npm run start:win
+```bash
+# 공통 실행 명령어
+npm start
+
+# Windows
+npm run start:win  # Windows 전용 빌드 후 실행
+
+# macOS
+npm run start:mac  # macOS 전용 빌드 후 실행
 ```
 
-- macOS:
-```
-bash
-npm run start:mac
+### 개발 중 파일 감시
+```bash
+# TypeScript 파일 변경 감지
+npm run watch
+
+# CSS 파일 변경 감지
+npm run watch:css
 ```
 
 ## 빌드 및 배포
 
-### Windows 배포판 생성
+### 빌드
+```bash
+# 전체 빌드
+npm run build:all  # clean:dist + build + rebuild:platform
+
+# TypeScript 빌드
+npm run build
 ```
-bash
+
+### Windows 배포판 생성
+```bash
+# 개발용 패키징
+npm run pack:win
+
+# 배포용 인스톨러 생성
 npm run dist:win
 ```
 
 ### macOS 배포판 생성
-```
-bash
+```bash
+# 개발용 패키징
+npm run pack:mac
+
+# 배포용 DMG 생성
 npm run dist:mac
 ```
 
 빌드된 실행 파일은 `release` 폴더에서 찾을 수 있습니다.
 
-## 버전 관리 가이드
+### 클린업
+```bash
+# dist 폴더 정리
+npm run clean:dist
 
-이 프로젝트는 자동화된 버전 관리 시스템을 사용합니다. 버전은 `x.y.z` 형식을 따릅니다.
-
-### 버전 업데이트 규칙
-
-커밋 메시지에 따라 자동으로 버전이 업데이트됩니다:
-
-1. **일반 업데이트** (z 증가)
-   - 일반적인 커밋
-   - 예: 1.1.2 → 1.1.3
-
-2. **마이너 업데이트** (y 증가, z는 1로 초기화)
-   - 커밋 메시지에 `#minor` 포함
-   - 예: 1.1.2 → 1.2.1
-
-3. **메이저 업데이트** (x 증가, y와 z는 초기화)
-   - 커밋 메시지에 `#major` 포함
-   - 예: 1.1.2 → 2.0.1
-
-4. **버전 업데이트 건너뛰기**
-   - 커밋 메시지에 `#noversion` 포함
-   - 버전이 증가하지 않음
-
-### 사용 예시
-```
-bash
-일반 업데이트
-git commit -m "fix: 버그 수정"
-마이너 버전 업데이트
-git commit -m "feat: 새로운 기능 추가 #minor"
-메이저 버전 업데이트
-git commit -m "feat: 주요 기능 변경 #major"
-버전이 필요없는 경우
-git commit -m "feat: 간단한 문서 수정 #noversion"
+# 전체 클린업 (node_modules, release, package-lock.json, dist)
+npm run clean
 ```
 
 ## 사용 방법
@@ -103,11 +102,18 @@ git commit -m "feat: 간단한 문서 수정 #noversion"
 4. 저장 경로 선택
 5. '이미지 처리 시작' 버튼 클릭
 
+### 추가 기능
+- 우측 상단의 '이미지 처리 시작' 버튼으로 처리 시작
+- 좌측 상단의 테마 토글 버튼으로 다크모드/라이트모드 전환
+- 로그 아이콘으로 처리 로그 확인 가능
+- 앱 초기화 버튼으로 설정 초기화 가능
+
 ## 시스템 요구사항
 
 - Windows 10 이상 또는 macOS 10.13 이상
 - 최소 4GB RAM
 - 500MB 이상의 여유 디스크 공간
+- 인터넷 연결 (최초 실행 시 폰트 다운로드)
 
 ## 개발 환경
 
@@ -115,6 +121,27 @@ git commit -m "feat: 간단한 문서 수정 #noversion"
 - npm 9.x 이상
 - Electron 24.x
 - TypeScript 5.x
+- Sharp 0.33.x
+- TailwindCSS 3.x
+
+## 버전 관리
+
+커밋 메시지에 따라 자동으로 버전이 업데이트됩니다:
+
+1. **일반 업데이트** (z 증가)
+   - 일반적인 커밋
+   - 예: `fix: 버그 수정`
+
+2. **마이너 업데이트** (y 증가)
+   - 커밋 메시지에 `#minor` 포함
+   - 예: `feat: 새로운 기능 추가 #minor`
+
+3. **메이저 업데이트** (x 증가)
+   - 커밋 메시지에 `#major` 포함
+   - 예: `feat: 주요 기능 변경 #major`
+
+4. **버전 업데이트 제외**
+   - 커밋 메시지에 `#noversion` 포함
 
 ## 라이선스
 

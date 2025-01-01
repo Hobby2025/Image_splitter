@@ -3,36 +3,42 @@
   "version": "1.1.5",
   "description": "이미지 분할 프로그램",
   "author": "ST",
-  "main": "dist/main.js",
+  "main": "./dist/src/main.js",
   "scripts": {
-    "build:css": "tailwindcss -i ./public/styles.css -o ./public/output.css --watch",
-    "start": "npm run build && npm run rebuild:sharp && ELECTRON_ENABLE_LOGGING=1 electron .",
-    "start:win": "npm run build && npm rebuild sharp --platform=win32 --arch=x64 --build-from-source && electron .",
-    "start:mac": "npm run build && npm run rebuild:sharp && electron .",
-    "build": "tsc",
+    "build:css": "tailwindcss -i ./public/styles.css -o ./public/output.css",
+    "watch:css": "tailwindcss -i ./public/styles.css -o ./public/output.css --watch",
+    "start": "npm run build:all && electron .",
+    "start:win": "npm run build:all && electron .",
+    "start:mac": "npm run build:all && electron .",
+    "build": "tsc && npm run copy-public && npm run build:css",
+    "build:all": "npm run clean:dist && npm run build && npm run rebuild:platform",
+    "clean:dist": "rimraf dist",
     "watch": "tsc -w",
-    "pack:win": "npm run build && npm rebuild sharp --platform=win32 --arch=x64 && electron-builder --dir",
-    "pack:mac": "npm run build && npm run rebuild:sharp && electron-builder --dir",
-    "predist:win": "npm rebuild sharp --platform=win32 --arch=x64 --build-from-source",
-    "dist:win": "npm run build && electron-builder --win --x64",
-    "predist:mac": "npm rebuild sharp --platform=darwin --arch=x64 --build-from-source",
-    "dist:mac": "npm run build && electron-rebuild -f -w sharp && electron-builder --mac --x64",
-    "clean": "rimraf node_modules release package-lock.json && npm cache clean --force",
-    "rebuild:sharp": "npm rebuild --platform=darwin --arch=x64 sharp --build-from-source",
-    "postinstall": "electron-builder install-app-deps && npm run download-font",
-    "rebuild": "./node_modules/.bin/electron-rebuild -f -w sharp",
-    "download-font": "ts-node src/scripts/download-font.ts"
+    "pack:win": "npm run build:all && electron-builder --dir",
+    "pack:mac": "npm run build:all && electron-builder --dir",
+    "predist:win": "npm run rebuild:platform",
+    "dist:win": "npm run build:all && electron-builder --win --x64",
+    "predist:mac": "npm run rebuild:platform",
+    "dist:mac": "npm run build:all && electron-builder --mac --x64",
+    "clean": "rimraf node_modules release package-lock.json dist && npm cache clean --force",
+    "rebuild:platform": "node dist/src/scripts/rebuild-sharp.js",
+    "postinstall": "electron-builder install-app-deps && npm run build && npm run download-font",
+    "download-font": "node dist/src/scripts/download-font.js",
+    "copy-public": "copyfiles -u 1 \"public/**/*\" dist/public/",
+    "copy-files": "copyfiles -u 1 \"public/**/*\" dist/",
+    "copy-html": "copyfiles -f public/index.html public/output.css dist/public/"
   },
   "build": {
     "appId": "com.imagesplitter.app",
     "productName": "Image Splitter",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
     "files": [
       "dist/**/*",
       "public/**/*",
-      "build/**/*"
+      "build/icons/*"
     ],
     "mac": {
       "target": [
@@ -48,6 +54,7 @@
       "identity": null
     },
     "dmg": {
+      "icon": "build/icons/icon.icns",
       "contents": [
         {
           "x": 130,
@@ -70,27 +77,42 @@
           ]
         }
       ],
-      "icon": "build/icons/icon.ico"
+      "icon": "build/icons/icon.ico",
+      "executableName": "Image Splitter",
+      "signtoolOptions": {
+        "signingHashAlgorithms": ["sha256"]
+      },
+      "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Image Splitter"
+      "installerIcon": "build/icons/icon.ico",
+      "uninstallerIcon": "build/icons/icon.ico",
+      "installerHeaderIcon": "build/icons/icon.ico",
+      "shortcutName": "Image Splitter",
+      "menuCategory": "Image Tools",
+      "uninstallDisplayName": "${productName}",
+      "deleteAppDataOnUninstall": true,
+      "license": "LICENSE",
+      "perMachine": false
     }
   },
   "dependencies": {
+    "@electron/remote": "^2.1.2",
     "adm-zip": "^0.5.10",
     "node-addon-api": "^8.3.0",
     "sharp": "^0.33.5"
   },
   "devDependencies": {
-    "@electron/rebuild": "^3.6.0",
+    "@electron/rebuild": "^3.7.1",
     "@types/adm-zip": "^0.5.5",
     "@types/node": "^22.10.2",
     "@types/sharp": "^0.31.1",
     "autoprefixer": "^10.4.20",
+    "copyfiles": "^2.4.1",
     "electron": "^24.3.0",
     "electron-builder": "^25.1.8",
     "postcss": "^8.4.49",
@@ -101,7 +123,11 @@
   },
   "config": {
     "sharp": {
-      "runtime": "electron"
+      "runtime": "electron",
+      "version": "0.33.5"
+    },
+    "electron": {
+      "version": "24.3.0"
     }
   }
 }
