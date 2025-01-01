@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Image Splitter</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
     <link rel="stylesheet" href="output.css">
 </head>
 <body class="bg-gradient-to-br from-secondary-50 to-primary-50 dark:from-gray-900 dark:to-gray-800 h-full overflow-hidden font-ridi transition-colors duration-300">
@@ -170,6 +170,6 @@
         </div>
     </div>
 
-    <script src="renderer.js"></script>
+    <script type="module" src="../dist/public/renderer.js"></script>
 </body>
 </html>

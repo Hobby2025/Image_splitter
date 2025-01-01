@@ -1,19 +1,50 @@
-const { ipcRenderer } = require('electron');
-const path = require('path');
+const { ipcRenderer } = window.require('electron');
+const path = window.require('path');
 
 class ImageSplitterUI {
+    private dropZone: HTMLDivElement;
+    private status: HTMLDivElement;
+    private selectButton: HTMLButtonElement;
+    private savePathContainer: HTMLDivElement;
+    private savePath: HTMLDivElement;
+    private editSavePathButton: HTMLButtonElement;
+    private initialDropState: HTMLDivElement;
+    private selectedFileState: HTMLDivElement;
+    private selectedFileName: HTMLDivElement;
+    private cancelSelection: HTMLButtonElement;
+    private completionStatus: HTMLDivElement;
+    private logViewer: HTMLDivElement;
+    private logContent: HTMLDivElement;
+
+    private state: {
+        selectedZipPath: string | null;
+        selectedSavePath: string | null;
+        isProcessing: boolean;
+        splitHeight: number;
+    };
+
     constructor() {
-        this.dropZone = document.getElementById('dropZone');
-        this.status = document.getElementById('status');
-        this.selectButton = document.getElementById('selectZip');
-        this.savePathContainer = document.getElementById('savePathContainer');
-        this.savePath = document.getElementById('savePath');
-        this.editSavePathButton = document.getElementById('editSavePath');
-        this.initialDropState = document.getElementById('initialDropState');
-        this.selectedFileState = document.getElementById('selectedFileState');
-        this.selectedFileName = document.getElementById('selectedFileName');
-        this.cancelSelection = document.getElementById('cancelSelection');
-        this.completionStatus = document.getElementById('completionStatus');
+        console.log('ImageSplitterUI 초기화 시작');
+        
+        this.dropZone = document.getElementById('dropZone') as HTMLDivElement;
+        this.status = document.getElementById('status') as HTMLDivElement;
+        this.selectButton = document.getElementById('selectZip') as HTMLButtonElement;
+        
+        // 요소들이 제대로 찾아졌는지 확인
+        console.log('주요 요소 확인:', {
+            dropZone: !!this.dropZone,
+            status: !!this.status,
+            selectButton: !!this.selectButton
+        });
+
+        this.savePathContainer = document.getElementById('savePathContainer') as HTMLDivElement;
+        this.savePath = document.getElementById('savePath') as HTMLDivElement;
+        this.editSavePathButton = document.getElementById('editSavePath') as HTMLButtonElement;
+        this.initialDropState = document.getElementById('initialDropState') as HTMLDivElement;
+        this.selectedFileState = document.getElementById('selectedFileState') as HTMLDivElement;
+        this.selectedFileName = document.getElementById('selectedFileName') as HTMLDivElement;
+        this.cancelSelection = document.getElementById('cancelSelection') as HTMLButtonElement;
+        this.completionStatus = document.getElementById('completionStatus') as HTMLDivElement;
         
         this.state = {
             selectedZipPath: null,
@@ -33,14 +64,14 @@ class ImageSplitterUI {
         this.savePath.textContent = '저장 경로를 선택해주세요';
         
         // 로그 뷰어 요소
-        this.logViewer = document.getElementById('logViewer');
-        this.logContent = document.getElementById('logContent');
+        this.logViewer = document.getElementById('logViewer') as HTMLDivElement;
+        this.logContent = document.getElementById('logContent') as HTMLDivElement;
         
         // 로그 뷰어 이벤트 리스너 초기화
         this.initializeLogViewerEvents();
 
         // 앱 초기화 버튼 이벤트 리스너 추가
-        document.getElementById('resetApp').addEventListener('click', () => {
+        document.getElementById('resetApp')!.addEventListener('click', () => {
             this.confirmAndResetApp();
         });
 
@@ -48,8 +79,13 @@ class ImageSplitterUI {
         this.initializeTheme();
     }
 
-    initializeEventListeners() {
-        this.selectButton.addEventListener('click', () => this.selectZipFile());
+    private initializeEventListeners() {
+        console.log('이벤트 리스너 초기화 시작');
+        
+        this.selectButton.addEventListener('click', () => {
+            console.log('ZIP 파일 선택 버튼 클릭됨');
+            this.selectZipFile();
+        });
         
         this.dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -68,6 +104,9 @@ class ImageSplitterUI {
             e.stopPropagation();
             this.dropZone.classList.remove('dragover');
             
+            // dataTransfer가 null이 아닌지 확인
+            if (!e.dataTransfer) return;
+            
             const files = e.dataTransfer.files;
             if (files.length > 0 && files[0].path.toLowerCase().endsWith('.zip')) {
                 this.handleZipFile(files[0].path);
@@ -78,7 +117,9 @@ class ImageSplitterUI {
 
         // 경로 수정 버튼 클릭 이벤트
         this.editSavePathButton.addEventListener('click', async () => {
+            console.log('저장 경로 수정 버튼 클릭됨');
             const saveResult = await ipcRenderer.invoke('select-save-directory');
+            console.log('저장 경로 선택 결과:', saveResult);
             if (saveResult && saveResult.filePaths && saveResult.filePaths[0]) {
                 this.state.selectedSavePath = saveResult.filePaths[0];
                 this.savePath.textContent = this.state.selectedSavePath;
@@ -87,7 +128,11 @@ class ImageSplitterUI {
         });
 
         // 이미지 처리 시작 버튼 클릭 이벤트
-        document.getElementById('processImages').addEventListener('click', () => {
+        const processButton = document.getElementById('processImages');
+        console.log('처리 버튼 요소 확인:', !!processButton);
+        
+        processButton?.addEventListener('click', () => {
+            console.log('이미지 처리 버튼 클릭됨');
             this.processImages();
         });
 
@@ -97,7 +142,7 @@ class ImageSplitterUI {
         });
     }
 
-    initializeMessageHandlers() {
+    private initializeMessageHandlers() {
         window.addEventListener('message', (event) => {
             const { type, message, notificationType, progress } = event.data;
             
@@ -112,20 +157,20 @@ class ImageSplitterUI {
         });
     }
 
-    updateProgress(progress) {
+    private updateProgress(progress: number) {
         // 진행률 표시 UI 업데이트
         const percent = Math.round(progress * 100);
         this.updateStatus(`처리 중... ${percent}%`, 'info');
     }
 
-    async selectZipFile() {
+    private async selectZipFile() {
         const zipPath = await ipcRenderer.invoke('select-zip');
         if (zipPath) {
             this.handleZipFile(zipPath);
         }
     }
 
-    handleZipFile(zipPath) {
+    private handleZipFile(zipPath: string) {
         this.state.selectedZipPath = zipPath;
         this.selectedFileName.textContent = path.basename(zipPath);
         
@@ -135,7 +180,7 @@ class ImageSplitterUI {
         this.updateStatusBasedOnState();
     }
 
-    resetFileSelection() {
+    private resetFileSelection() {
         this.state.selectedZipPath = null;
         this.selectedFileName.textContent = '';
         
@@ -145,7 +190,7 @@ class ImageSplitterUI {
         this.updateStatusBasedOnState();
     }
 
-    updateStatusBasedOnState() {
+    private updateStatusBasedOnState() {
         if (!this.state.selectedZipPath && !this.state.selectedSavePath) {
             this.updateStatus('ZIP 파일을 선택해주세요.', 'info');
         } else if (!this.state.selectedZipPath && this.state.selectedSavePath) {
@@ -157,7 +202,7 @@ class ImageSplitterUI {
         }
     }
 
-    updateStatus(message, type = 'info') {
+    private updateStatus(message: string, type: string = 'info') {
         if (type === 'success' && message.includes('완료')) {
             this.showCompletionMessage(message);
         }
@@ -165,7 +210,7 @@ class ImageSplitterUI {
         this.status.textContent = message;
         
         const baseClasses = 'w-full max-w-3xl py-3 px-5 rounded-lg text-center text-lg transition-all duration-300';
-        const typeClasses = {
+        const typeClasses: { [key: string]: string } = {
             'error': 'bg-red-50 text-red-600 border border-red-200 dark:bg-gray-900 dark:text-white dark:border-red-800',
             'success': 'bg-green-50 text-green-600 border border-green-200 dark:bg-gray-900 dark:text-white dark:border-green-800',
             'info': 'bg-blue-50 text-blue-600 border border-blue-200 dark:bg-gray-900 dark:text-white dark:border-blue-800',
@@ -175,9 +220,9 @@ class ImageSplitterUI {
         this.status.className = `${baseClasses} ${typeClasses[type] || typeClasses.info}`;
     }
 
-    showCompletionMessage(message) {
+    private showCompletionMessage(message: string) {
         // 완료 메시지 표시
-        this.completionStatus.querySelector('div').textContent = message;
+        this.completionStatus.querySelector('div')!.textContent = message;
         this.completionStatus.classList.remove('translate-y-full');
         
         // 3초 후 메시지 숨기기
@@ -187,7 +232,7 @@ class ImageSplitterUI {
     }
 
     // 창 흔들기 효과
-    shakeWindow() {
+    private shakeWindow() {
         const positions = [
             'translateX(0px)',
             'translateX(-10px)',
@@ -209,7 +254,7 @@ class ImageSplitterUI {
     }
 
     // 성공 효과
-    pulseSuccess() {
+    private pulseSuccess() {
         document.body.classList.add('success-pulse');
         setTimeout(() => {
             document.body.classList.remove('success-pulse');
@@ -217,11 +262,11 @@ class ImageSplitterUI {
     }
 
     // 앱 아이콘 상태 업데이트
-    updateDockIcon(type) {
+    private updateDockIcon(type: string) {
         ipcRenderer.send('update-dock', type);
     }
 
-    async processImages() {
+    private async processImages() {
         if (this.state.isProcessing) return;
 
         try {
@@ -250,7 +295,7 @@ class ImageSplitterUI {
                 throw new Error(result.message);
             }
         } catch (error) {
-            this.updateStatus(error.message, 'error');
+            this.updateStatus((error as Error).message, 'error');
             this.shakeWindow();
             this.updateDockIcon('error');
         } finally {
@@ -262,32 +307,32 @@ class ImageSplitterUI {
         }
     }
 
-    initializeLogViewerEvents() {
+    private initializeLogViewerEvents() {
         // 로그 뷰어 열기
-        document.getElementById('showLogs').addEventListener('click', () => {
+        document.getElementById('showLogs')!.addEventListener('click', () => {
             this.logViewer.classList.remove('hidden');
             this.logViewer.classList.add('flex');
             this.loadLogs('app');  // 기본적으로 앱 로그 표시
         });
 
         // 로그 뷰어 닫기
-        document.getElementById('closeLogViewer').addEventListener('click', () => {
+        document.getElementById('closeLogViewer')!.addEventListener('click', () => {
             this.logViewer.classList.add('hidden');
             this.logViewer.classList.remove('flex');
         });
 
         // 앱 로그 보기
-        document.getElementById('showAppLogs').addEventListener('click', () => {
+        document.getElementById('showAppLogs')!.addEventListener('click', () => {
             this.loadLogs('app');
         });
 
         // 에러 로그 보기
-        document.getElementById('showErrorLogs').addEventListener('click', () => {
+        document.getElementById('showErrorLogs')!.addEventListener('click', () => {
             this.loadLogs('error');
         });
 
         // 로그 디렉토리 열기
-        document.getElementById('openLogDir').addEventListener('click', () => {
+        document.getElementById('openLogDir')!.addEventListener('click', () => {
             ipcRenderer.invoke('open-log-dir');
         });
 
@@ -300,7 +345,7 @@ class ImageSplitterUI {
         });
     }
 
-    async loadLogs(type) {
+    private async loadLogs(type: string) {
         try {
             const logs = await ipcRenderer.invoke('get-logs', type);
             const formattedLogs = this.formatLogs(logs, type);
@@ -311,7 +356,7 @@ class ImageSplitterUI {
         }
     }
 
-    formatLogs(logs, type) {
+    private formatLogs(logs: string, type: string) {
         if (!logs || logs === '로그가 없습니다.') {
             return `<div class="text-secondary-500 text-center py-4">기록된 ${type === 'error' ? '오류' : '작업'} 로그가 없습니다.</div>`;
         }
@@ -358,20 +403,20 @@ class ImageSplitterUI {
         }).join('');
     }
 
-    formatTimestamp(timestamp) {
+    private formatTimestamp(timestamp: string) {
         if (!timestamp) return '';
         const date = new Date(timestamp);
         return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
     }
 
-    escapeHtml(text) {
+    private escapeHtml(text: string) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
 
     // 앱 초기화 확인 및 실행
-    async confirmAndResetApp() {
+    private async confirmAndResetApp() {
         // 처리 중인 경우 초기화 방지
         if (this.state.isProcessing) {
             this.updateStatus('처리 중에는 초기화할 수 없습니다.', 'error');
@@ -394,7 +439,7 @@ class ImageSplitterUI {
 
                 // UI 초기화
                 this.resetFileSelection();
-                document.getElementById('splitHeight').value = '1500';
+                (document.getElementById('splitHeight') as HTMLInputElement).value = '1500';
                 this.savePath.textContent = '저장 경로를 선택해주세요';
                 
                 // 로그 뷰어 닫기
@@ -412,12 +457,12 @@ class ImageSplitterUI {
             } catch (error) {
                 this.updateStatus('초기화 중 오류가 발생했습니다.', 'error');
                 this.shakeWindow();
-                Logger.error('App reset failed', error);
+                console.error('App reset failed', error);
             }
         }
     }
 
-    initializeTheme() {
+    private initializeTheme() {
         // 시스템 다크모드 감지
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
         
@@ -430,7 +475,7 @@ class ImageSplitterUI {
         }
         
         // 테마 토글 버튼 이벤트
-        document.getElementById('toggleTheme').addEventListener('click', () => {
+        document.getElementById('toggleTheme')!.addEventListener('click', () => {
             this.toggleTheme();
         });
         
@@ -442,7 +487,7 @@ class ImageSplitterUI {
         });
     }
 
-    setTheme(theme) {
+    private setTheme(theme: string) {
         if (theme === 'dark') {
             document.documentElement.classList.add('dark');
         } else {
@@ -450,7 +495,7 @@ class ImageSplitterUI {
         }
     }
 
-    toggleTheme() {
+    private toggleTheme() {
         const isDark = document.documentElement.classList.toggle('dark');
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
         
