@@ -29,25 +29,26 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "Current version: $CURRENT_VERSION"
           
-          # 커밋 메시지에서 major 또는 minor 업데이트 확인
+          # 커밋 메시지에서 버전 업데이트 확인
           COMMIT_MSG=$(git log -1 --pretty=%B)
+          
+          # #noversion 키워드가 있으면 버전 업데이트 건너뛰기
+          if [[ $COMMIT_MSG == *"#noversion"* ]]; then
+            echo "Skipping version update"
+            echo "new_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
           if [[ $COMMIT_MSG == *"#major"* ]]; then
-            # major 버전 업데이트 (x.0.1)
             NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print ($1+1) ".0.1"}')
           elif [[ $COMMIT_MSG == *"#minor"* ]]; then
-            # minor 버전 업데이트 (x.x.1)
             NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print $1 "." ($2+1) ".1"}')
           else
-            # patch 버전 업데이트 (x.x.x+1)
             NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print $1 "." $2 "." ($3+1)}')
           fi
           
           echo "New version: $NEW_VERSION"
-          
-          # package.json 업데이트
           npm version $NEW_VERSION --no-git-tag-version
-          
-          # 변수 저장
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Commit and Push Changes
