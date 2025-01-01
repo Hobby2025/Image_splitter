@@ -224,7 +224,6 @@ $RECYCLE.BIN/
 # 큰 파일들이 있는 디렉토리
 node_modules/
 dist/
-build/
 *.zip
 *.tar.gz
 *.rar
