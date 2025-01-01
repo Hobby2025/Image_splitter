@@ -1,0 +1,106 @@
+{
+  "name": "image-splitter",
+  "version": "1.1.2",
+  "description": "이미지 분할 프로그램",
+  "author": "ST",
+  "main": "dist/main.js",
+  "scripts": {
+    "build:css": "tailwindcss -i ./public/styles.css -o ./public/output.css --watch",
+    "start": "npm run build && npm run rebuild:sharp && ELECTRON_ENABLE_LOGGING=1 electron .",
+    "start:win": "npm run build && npm rebuild sharp --platform=win32 --arch=x64 --build-from-source && electron .",
+    "start:mac": "npm run build && npm run rebuild:sharp && electron .",
+    "build": "tsc",
+    "watch": "tsc -w",
+    "pack:win": "npm run build && npm rebuild sharp --platform=win32 --arch=x64 && electron-builder --dir",
+    "pack:mac": "npm run build && npm run rebuild:sharp && electron-builder --dir",
+    "predist:win": "npm rebuild sharp --platform=win32 --arch=x64 --build-from-source",
+    "dist:win": "npm run build && electron-builder --win --x64",
+    "predist:mac": "npm rebuild sharp --platform=darwin --arch=x64 --build-from-source",
+    "dist:mac": "npm run build && electron-rebuild -f -w sharp && electron-builder --mac --x64",
+    "clean": "rimraf node_modules release package-lock.json && npm cache clean --force",
+    "rebuild:sharp": "npm rebuild --platform=darwin --arch=x64 sharp --build-from-source",
+    "postinstall": "electron-builder install-app-deps && npm run download-font",
+    "rebuild": "./node_modules/.bin/electron-rebuild -f -w sharp",
+    "download-font": "node scripts/download-font.js"
+  },
+  "build": {
+    "appId": "com.imagesplitter.app",
+    "productName": "Image Splitter",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "public/**/*",
+      "build/**/*"
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.utilities",
+      "icon": "build/icons/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "identity": null
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icons/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Image Splitter"
+    }
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.10",
+    "node-addon-api": "^8.3.0",
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.6.0",
+    "@types/adm-zip": "^0.5.5",
+    "@types/node": "^22.10.2",
+    "@types/sharp": "^0.31.1",
+    "autoprefixer": "^10.4.20",
+    "electron": "^24.3.0",
+    "electron-builder": "^25.1.8",
+    "postcss": "^8.4.49",
+    "rimraf": "^6.0.1",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.3.3"
+  },
+  "config": {
+    "sharp": {
+      "runtime": "electron"
+    }
+  }
+}
