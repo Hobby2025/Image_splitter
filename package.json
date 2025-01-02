@@ -1,6 +1,6 @@
 {
   "name": "image-splitter",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "이미지 분할 프로그램",
   "author": "ST",
   "main": "./dist/src/main.cjs",
