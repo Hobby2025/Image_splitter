@@ -225,14 +225,7 @@ class ImageSplitterUI {
 
         if (this.status) {
             this.status.textContent = message;
-            const baseClasses = 'w-full max-w-3xl py-3 px-5 rounded-lg text-center text-lg transition-all duration-300';
-            const typeClasses: { [key: string]: string } = {
-                'error': 'bg-red-50 text-red-600 border border-red-200 dark:bg-gray-900 dark:text-white dark:border-red-800',
-                'success': 'bg-green-50 text-green-600 border border-green-200 dark:bg-gray-900 dark:text-white dark:border-green-800',
-                'info': 'bg-blue-50 text-blue-600 border border-blue-200 dark:bg-gray-900 dark:text-white dark:border-blue-800',
-                'ready': 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-gray-900 dark:text-white dark:border-emerald-800'
-            };
-            this.status.className = `${baseClasses} ${typeClasses[type] || typeClasses.info}`;
+            this.status.className = `status-message ${type}`;
         }
     }
 
@@ -293,6 +286,7 @@ class ImageSplitterUI {
             this.state.isProcessing = true;
             document.body.classList.add('processing');
             this.updateDockIcon('progress');
+            this.updateStatus('이미지 처리를 시작합니다...', 'info');
 
             // 파일 유효성 검사
             const isValid = await ipcRenderer.invoke('validate-zip', this.state.selectedZipPath);
@@ -333,10 +327,9 @@ class ImageSplitterUI {
         if (showLogsButton && this.logViewer) {
             showLogsButton.addEventListener('click', () => {
                 if (this.logViewer) {
-                    this.logViewer.classList.remove('hidden');
-                    this.logViewer.classList.add('flex');
+                    this.logViewer.style.display = 'block';
+                    this.loadLogs('app');
                 }
-                this.loadLogs('app');  // 기본적으로 앱 로그 표시
             });
         }
 
@@ -345,8 +338,7 @@ class ImageSplitterUI {
         if (closeLogViewerButton && this.logViewer) {
             closeLogViewerButton.addEventListener('click', () => {
                 if (this.logViewer) {
-                    this.logViewer.classList.add('hidden');
-                    this.logViewer.classList.remove('flex');
+                    this.logViewer.style.display = 'none';
                 }
             });
         }
@@ -378,9 +370,8 @@ class ImageSplitterUI {
         // 모달 외부 클릭 시 닫기
         if (this.logViewer) {
             this.logViewer.addEventListener('click', (e) => {
-                if (e.target === this.logViewer) {
-                    this.logViewer?.classList.add('hidden');
-                    this.logViewer?.classList.remove('flex');
+                if (e.target === this.logViewer && this.logViewer) {
+                    this.logViewer.style.display = 'none';
                 }
             });
         }
@@ -388,22 +379,25 @@ class ImageSplitterUI {
 
     private async loadLogs(type: string) {
         try {
+            console.log('로그 로딩 시작:', type);  // 디버깅용 로그
             const logs = await ipcRenderer.invoke('get-logs', type);
+            console.log('로그 데이터 수신:', logs ? '데이터 있음' : '데이터 없음');  // 디버깅용 로그
             const formattedLogs = this.formatLogs(logs, type);
             if (this.logContent) {
                 this.logContent.innerHTML = formattedLogs;
-                this.logContent.scrollTop = this.logContent.scrollHeight || 0;
+                this.logContent.scrollTop = this.logContent.scrollHeight;
             }
         } catch (error) {
+            console.error('로그 로딩 오류:', error);  // 디버깅용 로그
             if (this.logContent) {
-                this.logContent.innerHTML = '<div class="text-red-600">로그를 불러올 수 없습니다.</div>';
+                this.logContent.innerHTML = '<div class="log-item text-red-600 text-center py-4">로그를 불러올 수 없습니다.</div>';
             }
         }
     }
 
     private formatLogs(logs: string, type: string) {
         if (!logs || logs === '로그가 없습니다.') {
-            return `<div class="text-secondary-500 text-center py-4">기록된 ${type === 'error' ? '오류' : '작업'} 로그가 없습니다.</div>`;
+            return `<div class="log-item text-secondary-500 text-center py-4">기록된 ${type === 'error' ? '오류' : '작업'} 로그가 없습니다.</div>`;
         }
 
         return logs.split('\n').map(line => {
@@ -424,25 +418,25 @@ class ImageSplitterUI {
             let levelClass = '';
             switch (level) {
                 case 'Error':
-                    levelClass = 'text-red-600 bg-red-50 border-red-200 dark:bg-gray-900 dark:text-white dark:border-red-800';
+                    levelClass = 'text-red-600 dark:text-red-400';
                     break;
                 case 'Info':
-                    levelClass = 'text-blue-600 bg-blue-50 border-blue-200 dark:bg-gray-900 dark:text-white dark:border-blue-800';
+                    levelClass = 'text-blue-600 dark:text-blue-400';
                     break;
                 case 'Debug':
-                    levelClass = 'text-green-600 bg-green-50 border-green-200 dark:bg-gray-900 dark:text-white dark:border-green-800';
+                    levelClass = 'text-green-600 dark:text-green-400';
                     break;
                 default:
-                    levelClass = 'text-secondary-600 bg-secondary-50 border-secondary-200 dark:bg-gray-900 dark:text-white dark:border-gray-700';
+                    levelClass = 'text-secondary-600 dark:text-secondary-400';
             }
 
             return `
-                <div class="mb-2 rounded-lg border p-2 ${levelClass}">
+                <div class="log-item">
                     <div class="flex items-center justify-between text-xs mb-1">
-                        <span class="font-medium">${level || '정보'}</span>
+                        <span class="font-medium ${levelClass}">${level || '정보'}</span>
                         <span class="text-secondary-500 dark:text-secondary-400">${this.formatTimestamp(timestamp)}</span>
                     </div>
-                    <div class="text-sm whitespace-pre-wrap">${this.escapeHtml(message)}</div>
+                    <div class="whitespace-pre-wrap">${this.escapeHtml(message)}</div>
                 </div>
             `;
         }).join('');

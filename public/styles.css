@@ -13,6 +13,85 @@ body {
     font-family: 'RIDIBatang', serif;
 }
 
+/* 공통 컴포넌트 스타일 */
+.card-base {
+    @apply bg-white/80 dark:bg-primary-dark-800/80 backdrop-blur-sm rounded-xl shadow-lg;
+    @apply border border-primary-300 dark:border-primary-dark-200;
+    @apply transition-all duration-300;
+}
+
+.button-base {
+    @apply rounded-lg transition-all duration-300 shadow-md hover:shadow-lg;
+    @apply transform hover:-translate-y-0.5;
+}
+
+.button-primary {
+    @apply bg-primary-500 hover:bg-primary-600 dark:bg-primary-dark-200 dark:hover:bg-primary-dark-100;
+    @apply text-white;
+}
+
+.button-icon {
+    @apply text-secondary-500 hover:text-secondary-600 dark:text-secondary-dark-50 dark:hover:text-white;
+    @apply transition-colors duration-300 p-1.5 rounded-lg;
+    @apply hover:bg-secondary-50 dark:hover:bg-primary-dark-200;
+}
+
+/* 상태 메시지 스타일 */
+.status-message {
+    @apply card-base p-4 text-center;
+    @apply text-base font-normal;
+}
+
+.status-message.info {
+    @apply border-blue-300 text-blue-600 dark:text-blue-400;
+}
+
+.status-message.error {
+    @apply border-red-300 text-red-600 dark:text-red-400 font-medium;
+}
+
+.status-message.success {
+    @apply border-emerald-300 text-emerald-600 dark:text-emerald-400 font-medium;
+}
+
+.status-message.ready {
+    @apply border-emerald-300 text-emerald-600 dark:text-emerald-400 font-medium;
+}
+
+/* 로그 뷰어 스타일 */
+#logViewer {
+    z-index: 50;
+}
+
+#logViewer[style*="display: block"] {
+    display: flex !important;
+}
+
+.log-viewer-content {
+    @apply card-base w-full mx-auto;
+    @apply relative transform;
+}
+
+.log-viewer-header {
+    @apply flex justify-between items-center px-6 py-4;
+    @apply border-b border-gray-200 dark:border-gray-700;
+}
+
+.log-content {
+    @apply p-4 mx-4 mb-4 overflow-y-auto font-mono text-xs;
+    @apply bg-gray-50 dark:bg-primary-dark-900 rounded-lg;
+    @apply text-secondary-800 dark:text-white;
+    @apply border border-gray-200 dark:border-gray-700;
+    height: 450px;
+    line-height: 1.4;
+}
+
+.log-item {
+    @apply mb-2 p-2 rounded border border-gray-100 dark:border-gray-800;
+    @apply hover:bg-gray-100 dark:hover:bg-primary-dark-800;
+    @apply transition-colors duration-200;
+}
+
 /* 성공 시 펄스 효과 */
 @keyframes successPulse {
     0% { background-color: rgba(167, 243, 208, 0); }
@@ -36,30 +115,23 @@ body {
     box-shadow: 0 0 15px rgba(14, 165, 233, 0.3);
 }
 
-/* 로그 뷰어 스타일 */
-.log-content {
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-}
-
 /* 스크롤바 스타일링 */
 .log-content::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
 
 .log-content::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
+    @apply bg-gray-100 dark:bg-primary-dark-900;
+    border-radius: 3px;
 }
 
 .log-content::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
+    @apply bg-gray-400 dark:bg-gray-600;
+    border-radius: 3px;
 }
 
 .log-content::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    @apply bg-gray-500 dark:bg-gray-500;
 }
 
 /* 테마 전환 애니메이션 */
@@ -72,41 +144,12 @@ body {
     100% { opacity: 1; }
 }
 
-/* 다크모드 스타일 오버라이드 */
-.dark .status-error {
-    @apply bg-red-900 text-white border-red-800;
+/* 모달 애니메이션 */
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
 }
 
-.dark .status-success {
-    @apply bg-green-900 text-white border-green-800;
-}
-
-.dark .status-info {
-    @apply bg-blue-900 text-white border-blue-800;
-}
-
-.dark .status-ready {
-    @apply bg-emerald-900 text-white border-emerald-800;
-}
-
-/* 로그 뷰어 다크모드 */
-.dark #logContent {
-    @apply bg-gray-900 text-white;
-}
-
-.dark .log-entry {
-    @apply border-gray-700;
-}
-
-/* 스크롤바 다크모드 */
-.dark .log-content::-webkit-scrollbar-track {
-    @apply bg-gray-800;
-}
-
-.dark .log-content::-webkit-scrollbar-thumb {
-    @apply bg-gray-600;
-}
-
-.dark .log-content::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-500;
+.modal-content {
+    animation: modalFadeIn 0.2s ease-out;
 }
