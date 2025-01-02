@@ -197,6 +197,11 @@ class ImageSplitterApp {
                 throw error;
             }
         });
+
+        // 앱 버전 정보 제공
+        ipcMain.handle('get-app-version', () => {
+            return app.getVersion();
+        });
     }
 
     /**

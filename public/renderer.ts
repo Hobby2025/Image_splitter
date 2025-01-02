@@ -6,40 +6,40 @@ interface FileWithPath extends File {
 }
 
 class ImageSplitterUI {
-    private dropZone: HTMLDivElement;
-    private status: HTMLDivElement;
-    private selectButton: HTMLButtonElement;
-    private savePathContainer: HTMLDivElement;
-    private savePath: HTMLDivElement;
-    private editSavePathButton: HTMLButtonElement;
-    private initialDropState: HTMLDivElement;
-    private selectedFileState: HTMLDivElement;
-    private selectedFileName: HTMLDivElement;
-    private cancelSelection: HTMLButtonElement;
-    private completionStatus: HTMLDivElement;
-    private logViewer: HTMLDivElement;
-    private logContent: HTMLDivElement;
+    private dropZone: HTMLDivElement | null = null;
+    private status: HTMLDivElement | null = null;
+    private selectButton: HTMLButtonElement | null = null;
+    private savePathContainer: HTMLDivElement | null = null;
+    private savePath: HTMLDivElement | null = null;
+    private editSavePathButton: HTMLButtonElement | null = null;
+    private initialDropState: HTMLDivElement | null = null;
+    private selectedFileState: HTMLDivElement | null = null;
+    private selectedFileName: HTMLDivElement | null = null;
+    private cancelSelection: HTMLButtonElement | null = null;
+    private completionStatus: HTMLDivElement | null = null;
+    private logViewer: HTMLDivElement | null = null;
+    private logContent: HTMLDivElement | null = null;
+    private appVersion: HTMLSpanElement | null = null;
 
     private state: {
         selectedZipPath: string | null;
         selectedSavePath: string | null;
         isProcessing: boolean;
         splitHeight: number;
+    } = {
+        selectedZipPath: null,
+        selectedSavePath: null,
+        isProcessing: false,
+        splitHeight: 1500
     };
 
     constructor() {
-        console.log('ImageSplitterUI 초기화 시작');
-        
         this.dropZone = document.getElementById('dropZone') as HTMLDivElement;
         this.status = document.getElementById('status') as HTMLDivElement;
         this.selectButton = document.getElementById('selectZip') as HTMLButtonElement;
-        
-        // 요소들이 제대로 찾아졌는지 확인
-        console.log('주요 요소 확인:', {
-            dropZone: !!this.dropZone,
-            status: !!this.status,
-            selectButton: !!this.selectButton
-        });
+        if (!this.selectButton) {
+            return;
+        }
 
         this.savePathContainer = document.getElementById('savePathContainer') as HTMLDivElement;
         this.savePath = document.getElementById('savePath') as HTMLDivElement;
@@ -49,23 +49,22 @@ class ImageSplitterUI {
         this.selectedFileName = document.getElementById('selectedFileName') as HTMLDivElement;
         this.cancelSelection = document.getElementById('cancelSelection') as HTMLButtonElement;
         this.completionStatus = document.getElementById('completionStatus') as HTMLDivElement;
-        
-        this.state = {
-            selectedZipPath: null,
-            selectedSavePath: null,
-            isProcessing: false,
-            splitHeight: 1500
-        };
+        this.appVersion = document.getElementById('appVersion') as HTMLSpanElement;
         
         this.initializeEventListeners();
         this.initializeMessageHandlers();
+        this.initializeAppVersion();
         
         // 초기 상태 메시지 설정
         this.updateStatus('ZIP 파일을 선택해주세요.');
         
         // 저장 경로 컨테이너 초기 표시
-        this.savePathContainer.style.display = 'block';
-        this.savePath.textContent = '저장 경로를 선택해주세요';
+        if (this.savePathContainer) {
+            this.savePathContainer.style.display = 'block';
+        }
+        if (this.savePath) {
+            this.savePath.textContent = '저장 경로를 선택해주세요';
+        }
         
         // 로그 뷰어 요소
         this.logViewer = document.getElementById('logViewer') as HTMLDivElement;
@@ -75,63 +74,65 @@ class ImageSplitterUI {
         this.initializeLogViewerEvents();
 
         // 앱 초기화 버튼 이벤트 리스너 추가
-        document.getElementById('resetApp')!.addEventListener('click', () => {
-            this.confirmAndResetApp();
-        });
+        const resetAppButton = document.getElementById('resetApp');
+        if (resetAppButton) {
+            resetAppButton.addEventListener('click', () => {
+                this.confirmAndResetApp();
+            });
+        }
 
         // 다크모드 초기화
         this.initializeTheme();
     }
 
     private initializeEventListeners() {
-        console.log('이벤트 리스너 초기화 시작');
+        if (this.selectButton) {
+            this.selectButton.addEventListener('click', () => {
+                this.selectZipFile();
+            });
+        }
         
-        this.selectButton.addEventListener('click', () => {
-            console.log('ZIP 파일 선택 버튼 클릭됨');
-            this.selectZipFile();
-        });
-        
-        this.dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.dropZone.classList.add('dragover');
-        });
+        if (this.dropZone) {
+            this.dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.dropZone?.classList.add('dragover');
+            });
 
-        this.dropZone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.dropZone.classList.remove('dragover');
-        });
+            this.dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.dropZone?.classList.remove('dragover');
+            });
 
-        this.dropZone.addEventListener('drop', (e) => {
-            this.handleDrop(e);
-        });
+            this.dropZone.addEventListener('drop', (e) => {
+                this.handleDrop(e);
+            });
+        }
 
-        // 경로 수정 버튼 클릭 이벤트
-        this.editSavePathButton.addEventListener('click', async () => {
-            console.log('저장 경로 수정 버튼 클릭됨');
-            const saveResult = await ipcRenderer.invoke('select-save-directory');
-            console.log('저장 경로 선택 결과:', saveResult);
-            if (saveResult && saveResult.filePaths && saveResult.filePaths[0]) {
-                this.state.selectedSavePath = saveResult.filePaths[0];
-                this.savePath.textContent = this.state.selectedSavePath;
-                this.updateStatusBasedOnState();
-            }
-        });
+        if (this.editSavePathButton) {
+            this.editSavePathButton.addEventListener('click', async () => {
+                const saveResult = await ipcRenderer.invoke('select-save-directory');
+                if (saveResult && saveResult.filePaths && saveResult.filePaths[0]) {
+                    this.state.selectedSavePath = saveResult.filePaths[0];
+                    if (this.savePath) {
+                        this.savePath.textContent = this.state.selectedSavePath;
+                    }
+                    this.updateStatusBasedOnState();
+                }
+            });
+        }
 
-        // 이미지 처리 시작 버튼 클릭 이벤트
         const processButton = document.getElementById('processImages');
-        console.log('처리 버튼 요소 확인:', !!processButton);
-        
         processButton?.addEventListener('click', () => {
-            console.log('이미지 처리 버튼 클릭됨');
             this.processImages();
         });
 
-        // 파일 선택 취소 버튼 이벤트
-        this.cancelSelection.addEventListener('click', () => {
-            this.resetFileSelection();
-        });
+        if (this.cancelSelection) {
+            this.cancelSelection.addEventListener('click', () => {
+                this.resetFileSelection();
+            });
+        }
     }
 
     private initializeMessageHandlers() {
@@ -150,34 +151,57 @@ class ImageSplitterUI {
     }
 
     private updateProgress(progress: number) {
-        // 진행률 표시 UI 업데이트
         const percent = Math.round(progress * 100);
         this.updateStatus(`처리 중... ${percent}%`, 'info');
     }
 
     private async selectZipFile() {
-        const zipPath = await ipcRenderer.invoke('select-zip');
-        if (zipPath) {
-            this.handleZipFile(zipPath);
+        try {
+            const zipPath = await ipcRenderer.invoke('select-zip');
+            if (zipPath) {
+                this.handleZipFile(zipPath);
+            }
+        } catch (error) {
+            this.updateStatus('ZIP 파일 선택 중 오류가 발생했습니다.', 'error');
         }
     }
 
     private handleZipFile(zipPath: string) {
+        if (!zipPath) {
+            this.updateStatus('유효하지 않은 ZIP 파일입니다.', 'error');
+            return;
+        }
         this.state.selectedZipPath = zipPath;
-        this.selectedFileName.textContent = path.basename(zipPath);
         
-        this.initialDropState.classList.add('hidden');
-        this.selectedFileState.classList.remove('hidden');
+        if (this.selectedFileName) {
+            this.selectedFileName.textContent = path.basename(zipPath);
+        }
+        
+        if (this.initialDropState) {
+            this.initialDropState.classList.add('hidden');
+        }
+        
+        if (this.selectedFileState) {
+            this.selectedFileState.classList.remove('hidden');
+        }
         
         this.updateStatusBasedOnState();
     }
 
     private resetFileSelection() {
         this.state.selectedZipPath = null;
-        this.selectedFileName.textContent = '';
         
-        this.initialDropState.classList.remove('hidden');
-        this.selectedFileState.classList.add('hidden');
+        if (this.selectedFileName) {
+            this.selectedFileName.textContent = '';
+        }
+        
+        if (this.initialDropState) {
+            this.initialDropState.classList.remove('hidden');
+        }
+        
+        if (this.selectedFileState) {
+            this.selectedFileState.classList.add('hidden');
+        }
         
         this.updateStatusBasedOnState();
     }
@@ -199,28 +223,32 @@ class ImageSplitterUI {
             this.showCompletionMessage(message);
         }
 
-        this.status.textContent = message;
-        
-        const baseClasses = 'w-full max-w-3xl py-3 px-5 rounded-lg text-center text-lg transition-all duration-300';
-        const typeClasses: { [key: string]: string } = {
-            'error': 'bg-red-50 text-red-600 border border-red-200 dark:bg-gray-900 dark:text-white dark:border-red-800',
-            'success': 'bg-green-50 text-green-600 border border-green-200 dark:bg-gray-900 dark:text-white dark:border-green-800',
-            'info': 'bg-blue-50 text-blue-600 border border-blue-200 dark:bg-gray-900 dark:text-white dark:border-blue-800',
-            'ready': 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-gray-900 dark:text-white dark:border-emerald-800'
-        };
-        
-        this.status.className = `${baseClasses} ${typeClasses[type] || typeClasses.info}`;
+        if (this.status) {
+            this.status.textContent = message;
+            const baseClasses = 'w-full max-w-3xl py-3 px-5 rounded-lg text-center text-lg transition-all duration-300';
+            const typeClasses: { [key: string]: string } = {
+                'error': 'bg-red-50 text-red-600 border border-red-200 dark:bg-gray-900 dark:text-white dark:border-red-800',
+                'success': 'bg-green-50 text-green-600 border border-green-200 dark:bg-gray-900 dark:text-white dark:border-green-800',
+                'info': 'bg-blue-50 text-blue-600 border border-blue-200 dark:bg-gray-900 dark:text-white dark:border-blue-800',
+                'ready': 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-gray-900 dark:text-white dark:border-emerald-800'
+            };
+            this.status.className = `${baseClasses} ${typeClasses[type] || typeClasses.info}`;
+        }
     }
 
     private showCompletionMessage(message: string) {
-        // 완료 메시지 표시
-        this.completionStatus.querySelector('div')!.textContent = message;
-        this.completionStatus.classList.remove('translate-y-full');
-        
-        // 3초 후 메시지 숨기기
-        setTimeout(() => {
-            this.completionStatus.classList.add('translate-y-full');
-        }, 3000);
+        if (this.completionStatus) {
+            const div = this.completionStatus.querySelector('div');
+            if (div) {
+                div.textContent = message;
+            }
+            this.completionStatus.classList.remove('translate-y-full');
+            setTimeout(() => {
+                if (this.completionStatus) {
+                    this.completionStatus.classList.add('translate-y-full');
+                }
+            }, 3000);
+        }
     }
 
     // 창 흔들기 효과
@@ -301,50 +329,75 @@ class ImageSplitterUI {
 
     private initializeLogViewerEvents() {
         // 로그 뷰어 열기
-        document.getElementById('showLogs')!.addEventListener('click', () => {
-            this.logViewer.classList.remove('hidden');
-            this.logViewer.classList.add('flex');
-            this.loadLogs('app');  // 기본적으로 앱 로그 표시
-        });
+        const showLogsButton = document.getElementById('showLogs');
+        if (showLogsButton && this.logViewer) {
+            showLogsButton.addEventListener('click', () => {
+                if (this.logViewer) {
+                    this.logViewer.classList.remove('hidden');
+                    this.logViewer.classList.add('flex');
+                }
+                this.loadLogs('app');  // 기본적으로 앱 로그 표시
+            });
+        }
 
         // 로그 뷰어 닫기
-        document.getElementById('closeLogViewer')!.addEventListener('click', () => {
-            this.logViewer.classList.add('hidden');
-            this.logViewer.classList.remove('flex');
-        });
+        const closeLogViewerButton = document.getElementById('closeLogViewer');
+        if (closeLogViewerButton && this.logViewer) {
+            closeLogViewerButton.addEventListener('click', () => {
+                if (this.logViewer) {
+                    this.logViewer.classList.add('hidden');
+                    this.logViewer.classList.remove('flex');
+                }
+            });
+        }
 
         // 앱 로그 보기
-        document.getElementById('showAppLogs')!.addEventListener('click', () => {
-            this.loadLogs('app');
-        });
+        const showAppLogsButton = document.getElementById('showAppLogs');
+        if (showAppLogsButton) {
+            showAppLogsButton.addEventListener('click', () => {
+                this.loadLogs('app');
+            });
+        }
 
         // 에러 로그 보기
-        document.getElementById('showErrorLogs')!.addEventListener('click', () => {
-            this.loadLogs('error');
-        });
+        const showErrorLogsButton = document.getElementById('showErrorLogs');
+        if (showErrorLogsButton) {
+            showErrorLogsButton.addEventListener('click', () => {
+                this.loadLogs('error');
+            });
+        }
 
         // 로그 디렉토리 열기
-        document.getElementById('openLogDir')!.addEventListener('click', () => {
-            ipcRenderer.invoke('open-log-dir');
-        });
+        const openLogDirButton = document.getElementById('openLogDir');
+        if (openLogDirButton) {
+            openLogDirButton.addEventListener('click', () => {
+                ipcRenderer.invoke('open-log-dir');
+            });
+        }
 
         // 모달 외부 클릭 시 닫기
-        this.logViewer.addEventListener('click', (e) => {
-            if (e.target === this.logViewer) {
-                this.logViewer.classList.add('hidden');
-                this.logViewer.classList.remove('flex');
-            }
-        });
+        if (this.logViewer) {
+            this.logViewer.addEventListener('click', (e) => {
+                if (e.target === this.logViewer) {
+                    this.logViewer?.classList.add('hidden');
+                    this.logViewer?.classList.remove('flex');
+                }
+            });
+        }
     }
 
     private async loadLogs(type: string) {
         try {
             const logs = await ipcRenderer.invoke('get-logs', type);
             const formattedLogs = this.formatLogs(logs, type);
-            this.logContent.innerHTML = formattedLogs;
-            this.logContent.scrollTop = this.logContent.scrollHeight;
+            if (this.logContent) {
+                this.logContent.innerHTML = formattedLogs;
+                this.logContent.scrollTop = this.logContent.scrollHeight || 0;
+            }
         } catch (error) {
-            this.logContent.innerHTML = '<div class="text-red-600">로그를 불러올 수 없습니다.</div>';
+            if (this.logContent) {
+                this.logContent.innerHTML = '<div class="text-red-600">로그를 불러올 수 없습니다.</div>';
+            }
         }
     }
 
@@ -432,11 +485,15 @@ class ImageSplitterUI {
                 // UI 초기화
                 this.resetFileSelection();
                 (document.getElementById('splitHeight') as HTMLInputElement).value = '1500';
-                this.savePath.textContent = '저장 경로를 선택해주세요';
+                if (this.savePath) {
+                    this.savePath.textContent = '저장 경로를 선택해주세요';
+                }
                 
                 // 로그 뷰어 닫기
-                this.logViewer.classList.add('hidden');
-                this.logViewer.classList.remove('flex');
+                if (this.logViewer) {
+                    this.logViewer.classList.add('hidden');
+                    this.logViewer.classList.remove('flex');
+                }
 
                 // 상태 메시지 업데이트
                 this.updateStatus('앱이 초기화되었습니다.', 'info');
@@ -449,7 +506,6 @@ class ImageSplitterUI {
             } catch (error) {
                 this.updateStatus('초기화 중 오류가 발생했습니다.', 'error');
                 this.shakeWindow();
-                console.error('App reset failed', error);
             }
         }
     }
@@ -505,6 +561,20 @@ class ImageSplitterUI {
             const file = files[0] as FileWithPath;
             if (file && file.path.toLowerCase().endsWith('.zip')) {
                 this.handleZipFile(file.path);
+            }
+        }
+    }
+
+    private async initializeAppVersion() {
+        try {
+            const version = await ipcRenderer.invoke('get-app-version');
+            if (this.appVersion) {
+                this.appVersion.textContent = `v${version}`;
+            }
+            document.title = `Image Splitter v${version}`;
+        } catch (error) {
+            if (this.appVersion) {
+                this.appVersion.textContent = '';
             }
         }
     }

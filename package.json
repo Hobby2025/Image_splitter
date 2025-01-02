@@ -3,14 +3,14 @@
   "version": "1.2.2",
   "description": "이미지 분할 프로그램",
   "author": "ST",
-  "main": "./dist/src/main.js",
+  "main": "./dist/src/main.cjs",
   "scripts": {
     "build:css": "tailwindcss -i ./public/styles.css -o ./public/output.css",
     "watch:css": "tailwindcss -i ./public/styles.css -o ./public/output.css --watch",
     "start": "npm run build:all && electron .",
     "start:win": "npm run build:all && electron .",
     "start:mac": "npm run build:all && electron .",
-    "build": "tsc && npm run copy-public && npm run build:css",
+    "build": "tsc && webpack && npm run copy-public && npm run build:css",
     "build:all": "npm run clean:dist && npm run build && npm run rebuild:platform",
     "clean:dist": "rimraf dist",
     "watch": "tsc -w",
@@ -120,8 +120,11 @@
     "postcss": "^8.4.49",
     "rimraf": "^6.0.1",
     "tailwindcss": "^3.4.17",
+    "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
   },
   "config": {
     "sharp": {
