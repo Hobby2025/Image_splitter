@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import AdmZip from 'adm-zip';
+import StreamZip from 'node-stream-zip';
 import { ImageProcessingResult, ProcessingOptions } from './types';
 import { FileService } from './services/FileService';
 import { Logger } from './utils/Logger';
@@ -116,8 +116,10 @@ class ImageSplitterApp {
         // ZIP 파일 유효성 검사
         ipcMain.handle('validate-zip', async (_, zipPath: string) => {
             try {
-                const zip = new AdmZip(zipPath);
-                return zip.getEntries().length > 0;
+                const zip = new StreamZip.async({ file: zipPath });
+                const entries = await zip.entries();
+                await zip.close();
+                return Object.keys(entries).length > 0;
             } catch (error) {
                 Logger.error('ZIP validation failed', error as Error);
                 return false;

@@ -2,7 +2,7 @@ import { ProcessingOptions, ImageProcessingResult } from '../types';
 import { Logger } from '../utils/Logger';
 import { validateFilePath } from '../utils/SecurityUtils';
 import * as fs from 'fs';
-import AdmZip from 'adm-zip';
+import StreamZip from 'node-stream-zip';
 import * as path from 'path';
 import sharp from 'sharp';
 
@@ -27,21 +27,22 @@ export class FileService {
 
         this.processing = true;
         this.cancelRequested = false;
+        let zip: InstanceType<typeof StreamZip.async> | null = null;
 
         try {
-            const zip = new AdmZip(options.zipPath);
-            const entries = zip.getEntries();
+            zip = new StreamZip.async({ file: options.zipPath });
+            const entries = await zip.entries();
             const imageFiles: { entryName: string, folderPath: string }[] = [];
 
             // ZIP 파일 내의 이미지 파일만 필터링
-            entries.forEach(entry => {
-                if (entry.entryName.includes('__MACOSX')) return;
-                if (!entry.isDirectory && /\.(jpe?g|png|webp|tiff|gif|svg)$/i.test(entry.entryName)) {
-                    const normalizedPath = entry.entryName.replace(/\\/g, '/');
+            for (const [entryName, entry] of Object.entries(entries)) {
+                if (entryName.includes('__MACOSX')) continue;
+                if (!entry.isDirectory && /\.(jpe?g|png|webp|tiff|gif|svg)$/i.test(entryName)) {
+                    const normalizedPath = entryName.replace(/\\/g, '/');
                     const folderPath = path.dirname(normalizedPath);
-                    imageFiles.push({ entryName: entry.entryName, folderPath });
+                    imageFiles.push({ entryName, folderPath });
                 }
-            });
+            }
 
             imageFiles.sort((a, b) => a.entryName.localeCompare(b.entryName));
 
@@ -60,7 +61,7 @@ export class FileService {
                 }
 
                 try {
-                    const imageBuffer = zip.readFile(entryName);
+                    const imageBuffer = await zip.entryData(entryName);
                     if (!imageBuffer) {
                         Logger.error(`이미지 파일을 읽을 수 없습니다: ${entryName}`);
                         continue;
@@ -139,6 +140,9 @@ export class FileService {
             Logger.error('이미지 처리 중 오류가 발생했습니다.', error as Error);
             throw error;
         } finally {
+            if (zip) {
+                await zip.close();
+            }
             this.processing = false;
             this.cancelRequested = false;
         }
