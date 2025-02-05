@@ -1,4 +1,4 @@
-# Image Splitter
+![Image Splitter](https://github.com/user-attachments/assets/29212479-9284-46c1-a052-3c0c2c91b283)
 
 긴 이미지를 일정 높이로 자동 분할해주는 프로그램입니다.
 
