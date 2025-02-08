@@ -1,5 +1,10 @@
-![Image Splitter](https://github.com/user-attachments/assets/29212479-9284-46c1-a052-3c0c2c91b283)
+![License](https://img.shields.io/badge/License-MIT-black)&nbsp;
+![Electron](https://img.shields.io/badge/Electron-2d2d2f?style=flat&logo=electron&logoColor=fff)&nbsp;
+![TypeScript](https://img.shields.io/badge/TypeScript-%23007ACC?style=flat&logo=typescript&logoColor=fff)&nbsp;
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-%2338B2AC?style=flat&logo=tailwind-css&logoColor=fff)&nbsp;
 
+![Image Splitter](https://github.com/user-attachments/assets/29212479-9284-46c1-a052-3c0c2c91b283)
+   
 긴 이미지를 일정 높이로 자동 분할해주는 프로그램입니다.
 
 ## 주요 기능
