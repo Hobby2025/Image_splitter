@@ -142,6 +142,11 @@ npm run clean
 
 4. **버전 업데이트 제외**
    - 커밋 메시지에 `#noversion` 포함
+  
+## 기여자
+<a href = "https://github.com/Hobby2025/image_splitter/graphs/contributors">
+  <img src = "https://contrib.rocks/image?repo=Hobby2025/image_splitter"/>
+</a>
 
 ## 라이선스
 
