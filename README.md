@@ -150,7 +150,7 @@ npm run clean
   
 ## 기여자
 <a href = "https://github.com/Hobby2025/image_splitter/graphs/contributors">
-  <img src = "https://contrib.rocks/image?repo=Hobby2025/image_splitter"/>
+  <img src = "https://contrib.rocks/image?repo=Hobby2025/image_splitter" height="40"/>
 </a>
 
 ## 라이선스
